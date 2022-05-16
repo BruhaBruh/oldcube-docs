@@ -1,0 +1,263 @@
+openapi: 3.1.0
+info:
+  title: OldCube API
+  description: OldCube API documentation
+  version: "0.1"
+  contact:
+    name: BruhaBruh
+    url: https://t.me/bruhabruh4
+  license:
+    identifier: MIT
+    url: https://opensource.org/licenses/MIT
+    name: MIT License
+servers:
+  - url: https://api.oldcube.ru/v1
+    description: Production server
+  - url: http://api.oldcube.local/v1
+    description: Developer server
+tags:
+  - name: Authorization
+    description: Для авторизации пользователя
+security:
+  - AccessToken: []
+components:
+  schemas:
+    loginAndPassword:
+      type: object
+      properties:
+        login:
+          type: string
+          description: Логин пользователя (ник Minecraft)
+        password:
+          type: string
+          description: Пароль пользователя
+    error:
+      type: object
+      properties:
+        message:
+          type: string
+        status:
+          type: integer
+  responses:
+    InvalidLoginOrPassword:
+      description: Неверный логин или пароль
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/error"
+          example:
+            message: Invalid login or password
+            status: 403
+    500:
+      description: Внутренняя ошибка сервера
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/error"
+          example:
+            message: "Internal Server Error: 732e35d6-20fd-476e-b8b3-5251d01c0851"
+            status: 500
+  securitySchemes:
+    AccessToken:
+      type: apiKey
+      description: JWT токен доступа для аутентификации пользователя
+      in: cookie
+      name: access_token
+    RefreshToken:
+      type: apiKey
+      description: JWT токен для обновления токенов доступа и обновления
+      in: cookie
+      name: refresh_token
+paths:
+  /auth/login:
+    post:
+      operationId: login
+      summary: Авторизация
+      description: Используя логин и пароль
+      tags:
+        - Authorization
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/loginAndPassword"
+            example:
+              login: BruhaBruh
+              password: BruhaBruhPassword
+      security:
+        - {}
+      responses:
+        308:
+          description: Redirect на главную страницу и установка токенов доступа и обновления
+        403:
+          $ref: "#/components/responses/InvalidLoginOrPassword"
+        500:
+          $ref: "#/components/responses/500"
+    get:
+      operationId: serviceLogin
+      summary: Авторизация через сервис
+      description: Redirect на страницу авторизации через Сервис
+      parameters:
+        - name: service
+          in: query
+          required: true
+          description: Сервис через который нужно авторизовать пользователя
+          schema:
+            type: string
+            enum:
+              - discord
+              - twitch
+            example: twitch
+      tags:
+        - Authorization
+      security:
+        - {}
+      responses:
+        307:
+          description: Redirect на страницу авторизации через Сервис
+        403:
+          $ref: "#/components/responses/InvalidLoginOrPassword"
+        500:
+          $ref: "#/components/responses/500"
+  /auth/twitch:
+    get:
+      operationId: twitchCallback
+      summary: Twitch Callback
+      description: Callback OAuth авторизации Twitch'а
+      parameters:
+        - name: code
+          in: query
+          description: Код для авторизации пользователя
+          schema:
+            type: string
+        - name: scope
+          in: query
+          description: Права выданные на данный код
+          schema:
+            type: string
+        - name: error
+          in: query
+          description: Ошибка при авторизации
+          schema:
+            type: string
+        - name: description
+          in: query
+          description: Описание ошибки при авторизации
+          schema:
+            type: string
+      tags:
+        - Authorization
+      security:
+        - {}
+      responses:
+        308:
+          description: Redirect на главную страницу
+        400:
+          description: Неверный код
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error"
+              example:
+                message: Invalid code
+                status: 400
+        403:
+          description: Ошибка на стадии авторизации
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error"
+              example:
+                message: Authorization stage error
+                status: 403
+        500:
+          $ref: "#/components/responses/500"
+  /auth/discord:
+    get:
+      operationId: discordCallback
+      summary: Discord Callback
+      description: Callback OAuth авторизации Discord'а
+      parameters:
+        - name: code
+          in: query
+          required: true
+          description: Код для авторизации пользователя
+          schema:
+            type: string
+      tags:
+        - Authorization
+      security:
+        - {}
+      responses:
+        308:
+          description: Redirect на главную страницу
+        400:
+          description: Неверный код
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error"
+              example:
+                message: Invalid code
+                status: 400
+        403:
+          description: Ошибка на стадии авторизации
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error"
+              example:
+                message: Authorization stage error
+                status: 403
+        500:
+          $ref: "#/components/responses/500"
+  /auth/refresh:
+    post:
+      operationId: refreshTokens
+      summary: Обновить токены
+      description: Обновляет токены доступа и обновления
+      tags:
+        - Authorization
+      security:
+        - RefreshToken: []
+      responses:
+        200:
+          description: Успешно
+        403:
+          description: Неверный токен обновления
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error"
+              example:
+                message: Invalid refresh token
+                status: 403
+        500:
+          $ref: "#/components/responses/500"
+  /auth/logout:
+    get:
+      operationId: logout
+      summary: Выход из аккаунта
+      description: Очистка cookie и удаление токена обновления
+      security:
+        - AccessToken: []
+          RefreshToken: []
+      tags:
+        - Authorization
+      responses:
+        308:
+          description: Redirect на главную страницу
+  /auth/minecraft:
+    get:
+      operationId: minecraftAuth
+      summary: Авторизация входа Minecraft
+      description: При входе на сервер, если у игрока не совпадает IP с последним входом, то игрок должен пройти по ссылке и авторизоваться. Если все хорошо, на сервер отправляется запрос с разрешением на вход
+      security:
+        - AccessToken: []
+      tags:
+        - Authorization
+      responses:
+        307:
+          description: Если игрок не авторизован, то происходит redirect на страницу авторизации с указанием redirect_url
+        308:
+          description: Если все хорошо и к игроку привязан аккаунт minecraft, то происходит redirect на страницу с сообщением об успехе
