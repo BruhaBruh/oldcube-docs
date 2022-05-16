@@ -221,7 +221,7 @@ paths:
       security:
         - RefreshToken: []
       responses:
-        200:
+        204:
           description: Успешно
         403:
           description: Неверный токен обновления

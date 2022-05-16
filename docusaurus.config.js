@@ -7,7 +7,7 @@ const darkCodeTheme = require("prism-react-renderer/themes/dracula");
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: "OLDCUBE",
-  tagline: "Приватный SUB сервер",
+  tagline: "Приватный Minecraft сервер",
   url: "http://oldcube.local",
   baseUrl: "/",
   onBrokenLinks: "throw",
