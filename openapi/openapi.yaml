@@ -47,7 +47,7 @@ components:
             $ref: "#/components/schemas/error"
           example:
             message: Invalid login or password
-            status: 403
+            status: 400
     500:
       description: Внутренняя ошибка сервера
       content:
@@ -89,7 +89,7 @@ paths:
       responses:
         308:
           description: Redirect на главную страницу и установка токенов доступа и обновления
-        403:
+        400:
           $ref: "#/components/responses/InvalidLoginOrPassword"
         500:
           $ref: "#/components/responses/500"
@@ -115,8 +115,6 @@ paths:
       responses:
         307:
           description: Redirect на страницу авторизации через Сервис
-        403:
-          $ref: "#/components/responses/InvalidLoginOrPassword"
         500:
           $ref: "#/components/responses/500"
   /auth/twitch:
@@ -161,7 +159,7 @@ paths:
               example:
                 message: Invalid code
                 status: 400
-        403:
+        401:
           description: Ошибка на стадии авторизации
           content:
             application/json:
@@ -169,7 +167,7 @@ paths:
                 $ref: "#/components/schemas/error"
               example:
                 message: Authorization stage error
-                status: 403
+                status: 401
         500:
           $ref: "#/components/responses/500"
   /auth/discord:
@@ -200,7 +198,7 @@ paths:
               example:
                 message: Invalid code
                 status: 400
-        403:
+        401:
           description: Ошибка на стадии авторизации
           content:
             application/json:
@@ -208,7 +206,7 @@ paths:
                 $ref: "#/components/schemas/error"
               example:
                 message: Authorization stage error
-                status: 403
+                status: 401
         500:
           $ref: "#/components/responses/500"
   /auth/refresh:
@@ -223,7 +221,7 @@ paths:
       responses:
         204:
           description: Успешно
-        403:
+        401:
           description: Неверный токен обновления
           content:
             application/json:
@@ -231,7 +229,7 @@ paths:
                 $ref: "#/components/schemas/error"
               example:
                 message: Invalid refresh token
-                status: 403
+                status: 401
         500:
           $ref: "#/components/responses/500"
   /auth/logout:
