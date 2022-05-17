@@ -1,0 +1,9 @@
+.env
+.env.*
+.gitignore
+.prettierrc
+README.md
+yarn-error.log
+node_modules
+build
+.github
