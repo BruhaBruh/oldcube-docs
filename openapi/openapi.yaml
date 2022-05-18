@@ -578,7 +578,7 @@ paths:
                 twitch: BruhaBruh
                 discord: BruhaBruh#0000
                 isBanned: false
-                reason: Хубабуба
+                banReason: Хубабуба
                 banExpiredAt: 2022-05-18T11:09:01.080Z
         400:
           description: Не указана цель. Только для ServerToken
@@ -625,7 +625,7 @@ paths:
                 twitch:
                   type: string
                   description: Twitch никнейм. Регистр не важен
-                reason:
+                banReason:
                   type: string
                   description: Причина блокировки. **Макс. 64 символа**
                 banExpiredAt:
@@ -637,7 +637,7 @@ paths:
                 - banExpiredAt
             example:
               id: 2cd21400-ffd1-4057-9bb7-ae81375220f6
-              reason: Хубабуба
+              banReason: Хубабуба
               banExpiredAt: 2022-05-18T11:09:01.080Z
       tags:
         - ban
@@ -656,7 +656,7 @@ paths:
                 twitch: BruhaBruh
                 discord: BruhaBruh#0000
                 isBanned: false
-                reason: Хубабуба
+                banReason: Хубабуба
                 banExpiredAt: 2022-05-18T11:09:01.080Z
         400:
           description: Не указана цель
