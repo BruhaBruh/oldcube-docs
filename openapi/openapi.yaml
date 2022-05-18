@@ -30,6 +30,8 @@ tags:
     x-displayName: Баны
   - name: whitelist
     x-displayName: Белый список
+  - name: nickname
+    x-displayName: Никнейм
 x-tagGroups:
   - name: Authorization
     x-displayName: Авторизация
@@ -45,6 +47,10 @@ x-tagGroups:
     tags:
       - ban
       - whitelist
+  - name: OnlyUser
+    x-displayName: Личный кабинет
+    tags:
+      - nickname
 
 security:
   - AccessToken: []
@@ -573,7 +579,7 @@ paths:
                 discord: BruhaBruh#0000
                 isBanned: false
                 reason: Хубабуба
-                expiredAt: 2022-05-18T11:09:01.080Z
+                banExpiredAt: 2022-05-18T11:09:01.080Z
         400:
           description: Не указана цель. Только для ServerToken
           content:
@@ -600,40 +606,39 @@ paths:
       operationId: banUser
       summary: Выдача бана
       description: Выдает бан по нику, uuid, тегу Discord или нику Twitch, так же может быть использован для уменьшения срока бана вплоть до разбана, нужно просто указать прошедшую временную метку
-      parameters:
-        - name: username
-          in: query
-          schema:
-            type: string
-            description: Ник Minecraft
-        - name: uuid
-          in: query
-          schema:
-            type: string
-            description: UUID Minecraft
-        - name: discord
-          in: query
-          schema:
-            type: string
-            description: |
-              Discord тег. Например: `BruhaBruh#0000`
-        - name: twitch
-          in: query
-          schema:
-            type: string
-            description: Twitch никнейм. Регистр не важен
-        - name: reason
-          in: query
-          schema:
-            type: string
-            description: |
-              Причина блокировки. **Макс. 64 символа**
-        - name: expired
-          in: query
-          schema:
-            type: string
-            description: |
-              Дата окончания бата в [ISO 8601](https://ru.wikipedia.org/wiki/ISO_8601). Например: `2022-05-18T11:09:01.080Z`
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  description: Ник Minecraft
+                uuid:
+                  type: string
+                  description: UUID Minecraft
+                discord:
+                  type: string
+                  description: |
+                    Discord тег. Например: `BruhaBruh#0000`
+                twitch:
+                  type: string
+                  description: Twitch никнейм. Регистр не важен
+                reason:
+                  type: string
+                  description: Причина блокировки. **Макс. 64 символа**
+                banExpiredAt:
+                  type: string
+                  description: |
+                    Дата окончания бата в [ISO 8601](https://ru.wikipedia.org/wiki/ISO_8601). Например: `2022-05-18T11:09:01.080Z`
+              required:
+                - reason
+                - banExpiredAt
+            example:
+              id: 2cd21400-ffd1-4057-9bb7-ae81375220f6
+              reason: Хубабуба
+              banExpiredAt: 2022-05-18T11:09:01.080Z
       tags:
         - ban
       security:
@@ -652,7 +657,7 @@ paths:
                 discord: BruhaBruh#0000
                 isBanned: false
                 reason: Хубабуба
-                expiredAt: 2022-05-18T11:09:01.080Z
+                banExpiredAt: 2022-05-18T11:09:01.080Z
         400:
           description: Не указана цель
           content:
@@ -746,33 +751,33 @@ paths:
       operationId: whitelistUser
       summary: Внесение/Удаление в белый список
       description: Вносит в белый список или удаляет по нику, uuid, тегу Discord или нику Twitch
-      parameters:
-        - name: isWhitelisted
-          in: query
-          schema:
-            type: boolean
-            description: В белый список?
-        - name: username
-          in: query
-          schema:
-            type: string
-            description: Ник Minecraft
-        - name: uuid
-          in: query
-          schema:
-            type: string
-            description: UUID Minecraft
-        - name: discord
-          in: query
-          schema:
-            type: string
-            description: |
-              Discord тег. Например: `BruhaBruh#0000`
-        - name: twitch
-          in: query
-          schema:
-            type: string
-            description: Twitch никнейм. Регистр не важен
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                isWhitelisted:
+                  type: boolean
+                  description: В белый список?
+                username:
+                  type: string
+                  description: Ник Minecraft
+                uuid:
+                  type: string
+                  description: UUID Minecraft
+                discord:
+                  type: string
+                  description: |
+                    Discord тег. Например: `BruhaBruh#0000`
+                twitch:
+                  type: string
+                  description: Twitch никнейм. Регистр не важен
+              required:
+                - isWhitelisted
+            example:
+              isWhitelisted: true
+              username: BruhaBruh
       tags:
         - whitelist
       security:
@@ -800,5 +805,82 @@ paths:
               example:
                 message: Not Found
                 status: 404
+        500:
+          $ref: "#/components/responses/500"
+  /nickname:
+    get:
+      operationId: getNickname
+      summary: Текущий ник
+      description: Возвращает текущий никнейм Minecraft
+      tags:
+        - nickname
+      security:
+        - AccessToken: []
+      responses:
+        200:
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  username:
+                    type: string
+                    description: Minecraft nickname
+              example:
+                username: BruhaBruh
+        403:
+          $ref: "#/components/responses/403"
+        500:
+          $ref: "#/components/responses/500"
+    post:
+      operationId: setNickname
+      summary: Установка ника
+      description: Установка никнейма Minecraft c генерацией Offline UUID
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  description: Новый никнейм
+              required:
+                - username
+            example:
+              username: BruhaBruh
+      tags:
+        - nickname
+      security:
+        - AccessToken: []
+      responses:
+        200:
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: UUID Minecraft
+                  username:
+                    type: string
+                    description: Minecraft nickname
+              example:
+                id: 6ba421df-1e16-3f36-bcba-9b70b566a713
+                username: BruhaBruh
+        400:
+          description: Ник занят
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                message: Nickname already taken
+                status: 400
+        403:
+          $ref: "#/components/responses/403"
         500:
           $ref: "#/components/responses/500"
