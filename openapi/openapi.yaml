@@ -22,7 +22,7 @@ tags:
     x-displayName: Для пользователя
     description: Авторизация пользователя
   - name: minecraft-authorization
-    x-displayName: Сервер Minecraft
+    x-displayName: Авторизация minecraft
     description: Авторизация пользователя для сервера Minecraft
   - name: connect
     x-displayName: Подключение
@@ -37,7 +37,6 @@ x-tagGroups:
     x-displayName: Авторизация
     tags:
       - user-authorization
-      - minecraft-authorization
   - name: Connect
     x-displayName: Подключение
     tags:
@@ -45,6 +44,7 @@ x-tagGroups:
   - name: Server
     x-displayName: Сервер Minecraft
     tags:
+      - minecraft-authorization
       - ban
       - whitelist
   - name: OnlyUser
@@ -340,37 +340,6 @@ paths:
       responses:
         308:
           description: Redirect на главную страницу
-  /auth/minecraft:
-    get:
-      operationId: minecraftAuth
-      summary: Авторизация входа Minecraft
-      description: При входе на сервер, если у игрока не совпадает IP с последним входом, то игрок должен пройти по ссылке и авторизоваться. Если все хорошо, на сервер отправляется запрос с разрешением на вход
-      parameters:
-        - name: code
-          in: path
-          required: true
-          description: |
-            Специальный код, который будет **хэширован** с секретным ключом используя HMACSHA256. Хэш будет отправлен на сервер при успешной авторизации
-          schema:
-            type: string
-            example: Aw2a82s4QFyeAQsj
-        - name: id
-          in: path
-          required: true
-          description: |
-            UUID minecraft
-          schema:
-            type: string
-            example: ee946be4-f7f4-4ecc-92cc-446fc1ed8dc8
-      security:
-        - AccessToken: []
-      tags:
-        - minecraft-authorization
-      responses:
-        307:
-          description: Если игрок не авторизован, то происходит redirect на страницу авторизации с указанием redirect_url - та же ссылка, полученная с сервера minecraft
-        308:
-          description: Если игрок авторизован и к игроку привязан аккаунт minecraft, то происходит redirect на страницу с сообщением об успехе. Так же будет отправлен хэш на сервер minecraft, для подтверждения авторизации. Иначе на сервер будет отправлен полученный uuid, а так же будет redirect на страницу с сообщением об ошибке привязки аккаунта
   /connect:
     get:
       operationId: serviceConnect
@@ -533,6 +502,37 @@ paths:
           $ref: "#/components/responses/403"
         500:
           $ref: "#/components/responses/500"
+  /auth/minecraft:
+    get:
+      operationId: minecraftAuth
+      summary: Авторизация входа Minecraft
+      description: При входе на сервер, если у игрока не совпадает IP с последним входом, то игрок должен пройти по ссылке и авторизоваться. Если все хорошо, на сервер отправляется запрос с разрешением на вход
+      parameters:
+        - name: code
+          in: query
+          required: true
+          description: |
+            Специальный код, который будет **хэширован** с секретным ключом используя HMACSHA256. Хэш будет отправлен на сервер при успешной авторизации
+          schema:
+            type: string
+            example: Aw2a82s4QFyeAQsj
+        - name: id
+          in: query
+          required: true
+          description: |
+            UUID minecraft
+          schema:
+            type: string
+            example: ee946be4-f7f4-4ecc-92cc-446fc1ed8dc8
+      security:
+        - AccessToken: []
+      tags:
+        - minecraft-authorization
+      responses:
+        307:
+          description: Если игрок не авторизован, то происходит redirect на страницу авторизации с указанием redirect_url - та же ссылка, полученная с сервера minecraft
+        308:
+          description: Если игрок авторизован и к игроку привязан аккаунт minecraft, то происходит redirect на страницу с сообщением об успехе. Так же будет отправлен хэш на сервер minecraft, для подтверждения авторизации. Иначе на сервер будет отправлен полученный uuid, а так же будет redirect на страницу с сообщением об ошибке привязки аккаунта
   /ban:
     get:
       operationId: isBanned
