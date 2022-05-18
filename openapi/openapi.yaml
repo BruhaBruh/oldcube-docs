@@ -1,29 +1,58 @@
 openapi: 3.1.0
 info:
-  title: OldCube API
-  description: OldCube API documentation
-  version: "0.1"
-  contact:
-    name: BruhaBruh
-    url: https://t.me/bruhabruh4
-  license:
-    identifier: MIT
-    url: https://opensource.org/licenses/MIT
-    name: MIT License
+  version: "0.2"
+  title: OLDCUBE
+  description: |
+    Этот API задокументирован в **формате OpenAPI** и доступен для скачивания [здесь](/openapi.yaml).
+
+    ## Ограничение скорости
+    API имеет ограничение скорости, определенное для каждого IP-адреса. Лимиты и оставшиеся суммы указаны в заголовках ответов.
+    - Заголовок «X-Ratelimit-Limit» — это максимальное количество запросов, которые можно сделать за минуту.
+    - Заголовок «X-Ratelimit-Remaining» — это количество запросов, оставшихся в текущем окне ограничения скорости.
+    Заголовок X-Ratelimit-Reset представляет собой время в секундах до сброса окна ограничения скорости.
+    Ограничения скорости одинаковы независимо от того, используете ли вы токен или нет.
 servers:
   - url: https://api.oldcube.ru/v1
-    description: Production server
+    description: Production сервер
   - url: http://api.oldcube.local/v1
-    description: Developer server
+    description: Developer сервер
+
 tags:
+  - name: user-authorization
+    x-displayName: Для пользователя
+    description: Авторизация пользователя
+  - name: minecraft-authorization
+    x-displayName: Сервер Minecraft
+    description: Авторизация пользователя для сервера Minecraft
+
+x-tagGroups:
   - name: Authorization
-    description: Для авторизации пользователя
+    x-displayName: Авторизация
+    tags:
+      - user-authorization
+      - minecraft-authorization
+
 security:
   - AccessToken: []
 components:
+  parameters:
+    Service:
+      name: service
+      in: query
+      required: true
+      description: Сервис через который нужно авторизовать пользователя
+      schema:
+        type: string
+        enum:
+          - discord
+          - twitch
+        example: twitch
   schemas:
-    loginAndPassword:
+    LoginAndPassword:
       type: object
+      required:
+        - login
+        - password
       properties:
         login:
           type: string
@@ -31,7 +60,7 @@ components:
         password:
           type: string
           description: Пароль пользователя
-    error:
+    Error:
       type: object
       properties:
         message:
@@ -44,7 +73,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/error"
+            $ref: "#/components/schemas/Error"
           example:
             message: Invalid login or password
             status: 400
@@ -53,7 +82,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/error"
+            $ref: "#/components/schemas/Error"
           example:
             message: "Internal Server Error: 732e35d6-20fd-476e-b8b3-5251d01c0851"
             status: 500
@@ -72,15 +101,14 @@ paths:
   /auth/login:
     post:
       operationId: login
-      summary: Авторизация
-      description: Используя логин и пароль
+      summary: Вход через пароль
       tags:
-        - Authorization
+        - user-authorization
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/loginAndPassword"
+              $ref: "#/components/schemas/LoginAndPassword"
             example:
               login: BruhaBruh
               password: BruhaBruhPassword
@@ -95,21 +123,12 @@ paths:
           $ref: "#/components/responses/500"
     get:
       operationId: serviceLogin
-      summary: Авторизация через сервис
+      summary: Вход через сервис
       description: Redirect на страницу авторизации через Сервис
       parameters:
-        - name: service
-          in: query
-          required: true
-          description: Сервис через который нужно авторизовать пользователя
-          schema:
-            type: string
-            enum:
-              - discord
-              - twitch
-            example: twitch
+        - $ref: "#/components/parameters/Service"
       tags:
-        - Authorization
+        - user-authorization
       security:
         - {}
       responses:
@@ -144,7 +163,7 @@ paths:
           schema:
             type: string
       tags:
-        - Authorization
+        - user-authorization
       security:
         - {}
       responses:
@@ -155,7 +174,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/error"
+                $ref: "#/components/schemas/Error"
               example:
                 message: Invalid code
                 status: 400
@@ -164,7 +183,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/error"
+                $ref: "#/components/schemas/Error"
               example:
                 message: Authorization stage error
                 status: 401
@@ -183,7 +202,7 @@ paths:
           schema:
             type: string
       tags:
-        - Authorization
+        - user-authorization
       security:
         - {}
       responses:
@@ -194,7 +213,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/error"
+                $ref: "#/components/schemas/Error"
               example:
                 message: Invalid code
                 status: 400
@@ -203,7 +222,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/error"
+                $ref: "#/components/schemas/Error"
               example:
                 message: Authorization stage error
                 status: 401
@@ -212,10 +231,10 @@ paths:
   /auth/refresh:
     post:
       operationId: refreshTokens
-      summary: Обновить токены
+      summary: Обновление токенов
       description: Обновляет токены доступа и обновления
       tags:
-        - Authorization
+        - user-authorization
       security:
         - RefreshToken: []
       responses:
@@ -226,7 +245,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/error"
+                $ref: "#/components/schemas/Error"
               example:
                 message: Invalid refresh token
                 status: 401
@@ -241,7 +260,7 @@ paths:
         - AccessToken: []
           RefreshToken: []
       tags:
-        - Authorization
+        - user-authorization
       responses:
         308:
           description: Redirect на главную страницу
@@ -250,12 +269,29 @@ paths:
       operationId: minecraftAuth
       summary: Авторизация входа Minecraft
       description: При входе на сервер, если у игрока не совпадает IP с последним входом, то игрок должен пройти по ссылке и авторизоваться. Если все хорошо, на сервер отправляется запрос с разрешением на вход
+      parameters:
+        - name: code
+          in: path
+          required: true
+          description: |
+            Специальный код, который будет **хэширован** с секретным ключом - `{code}_{secret_key}`. Хэш будет отправлен на сервер при успешной авторизации
+          schema:
+            type: string
+            example: Aw2a82s4QFyeAQsj
+        - name: id
+          in: path
+          required: true
+          description: |
+            UUID minecraft
+          schema:
+            type: string
+            example: ee946be4-f7f4-4ecc-92cc-446fc1ed8dc8
       security:
         - AccessToken: []
       tags:
-        - Authorization
+        - minecraft-authorization
       responses:
         307:
-          description: Если игрок не авторизован, то происходит redirect на страницу авторизации с указанием redirect_url
+          description: Если игрок не авторизован, то происходит redirect на страницу авторизации с указанием redirect_url - та же ссылка, полученная с сервера minecraft
         308:
-          description: Если все хорошо и к игроку привязан аккаунт minecraft, то происходит redirect на страницу с сообщением об успехе
+          description: Если все хорошо и к игроку привязан аккаунт minecraft, то происходит redirect на страницу с сообщением об успехе. Так же будет отправлен хэш на сервер minecraft, для подтверждения авторизации

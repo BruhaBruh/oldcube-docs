@@ -8,11 +8,11 @@ const darkCodeTheme = require("prism-react-renderer/themes/dracula");
 const config = {
   title: "OLDCUBE",
   tagline: "Приватный Minecraft сервер",
-  url: "http://oldcube.local",
+  url: "http://docs.oldcube.local",
   baseUrl: "/",
   onBrokenLinks: "throw",
   onBrokenMarkdownLinks: "warn",
-  favicon: "img/favicon.ico",
+  favicon: "img/favicon.png",
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
@@ -42,9 +42,8 @@ const config = {
         blog: {
           showReadingTime: true,
           // Please change this to your repo.
-          // Remove this to remove the "edit this page" links.
-          editUrl:
-            "https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/",
+          // Remove this to  remove the "edit this page" links.
+          editUrl: "https://github.com/bruhabruh/oldcube-docs/tree/main/",
         },
         theme: {
           customCss: require.resolve("./src/css/custom.css"),
@@ -77,7 +76,7 @@ const config = {
         title: "OLDCUBE",
         logo: {
           alt: "OLDCUBE Logo",
-          src: "img/logo.svg",
+          src: "img/favicon.png",
         },
         items: [
           {
