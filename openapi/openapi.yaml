@@ -24,13 +24,27 @@ tags:
   - name: minecraft-authorization
     x-displayName: Сервер Minecraft
     description: Авторизация пользователя для сервера Minecraft
-
+  - name: connect
+    x-displayName: Подключение
+  - name: ban
+    x-displayName: Баны
+  - name: whitelist
+    x-displayName: Белый список
 x-tagGroups:
   - name: Authorization
     x-displayName: Авторизация
     tags:
       - user-authorization
       - minecraft-authorization
+  - name: Connect
+    x-displayName: Подключение
+    tags:
+      - connect
+  - name: Server
+    x-displayName: Сервер Minecraft
+    tags:
+      - ban
+      - whitelist
 
 security:
   - AccessToken: []
@@ -48,6 +62,30 @@ components:
           - twitch
         example: twitch
   schemas:
+    BannedUser:
+      type: object
+      properties:
+        id:
+          type: string
+          description: UUID Minecraft
+        username:
+          type: string
+          description: Ник Minecraft
+        twitch:
+          type: string
+          description: Twitch никнейм
+        discord:
+          type: string
+          description: Тег Discord
+        isBanned:
+          type: boolean
+          description: Забанен?
+        reason:
+          type: string
+          description: Последняя/текущая причина блокировка
+        expiredAt:
+          type: string
+          description: Дата когда закончился/закончится бан в ISO 8601
     LoginAndPassword:
       type: object
       required:
@@ -77,6 +115,15 @@ components:
           example:
             message: Invalid login or password
             status: 400
+    403:
+      description: Нет доступа
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            message: Forbidden
+            status: 403
     500:
       description: Внутренняя ошибка сервера
       content:
@@ -97,6 +144,11 @@ components:
       description: JWT токен для обновления токенов доступа и обновления
       in: cookie
       name: refresh_token
+    ServerToken:
+      type: "http"
+      scheme: "bearer"
+      description: |
+        Секретный токен использующийся для аутентификации сервера. Например: `Authorization: Bearer d2ksfHLK44SJD3HFsd5iu315saHD2`
 paths:
   /auth/login:
     post:
@@ -134,6 +186,15 @@ paths:
       responses:
         307:
           description: Redirect на страницу авторизации через Сервис
+        400:
+          description: Неверный сервис
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                message: Invalid service
+                status: 400
         500:
           $ref: "#/components/responses/500"
   /auth/twitch:
@@ -197,8 +258,17 @@ paths:
       parameters:
         - name: code
           in: query
-          required: true
           description: Код для авторизации пользователя
+          schema:
+            type: string
+        - name: error
+          in: query
+          description: Ошибка при авторизации
+          schema:
+            type: string
+        - name: error_description
+          in: query
+          description: Описание ошибки при авторизации
           schema:
             type: string
       tags:
@@ -274,7 +344,7 @@ paths:
           in: path
           required: true
           description: |
-            Специальный код, который будет **хэширован** с секретным ключом - `{code}_{secret_key}`. Хэш будет отправлен на сервер при успешной авторизации
+            Специальный код, который будет **хэширован** с секретным ключом используя HMACSHA256. Хэш будет отправлен на сервер при успешной авторизации
           schema:
             type: string
             example: Aw2a82s4QFyeAQsj
@@ -294,4 +364,441 @@ paths:
         307:
           description: Если игрок не авторизован, то происходит redirect на страницу авторизации с указанием redirect_url - та же ссылка, полученная с сервера minecraft
         308:
-          description: Если все хорошо и к игроку привязан аккаунт minecraft, то происходит redirect на страницу с сообщением об успехе. Так же будет отправлен хэш на сервер minecraft, для подтверждения авторизации
+          description: Если игрок авторизован и к игроку привязан аккаунт minecraft, то происходит redirect на страницу с сообщением об успехе. Так же будет отправлен хэш на сервер minecraft, для подтверждения авторизации. Иначе на сервер будет отправлен полученный uuid, а так же будет redirect на страницу с сообщением об ошибке привязки аккаунта
+  /connect:
+    get:
+      operationId: serviceConnect
+      summary: Подключение сервиса
+      description: Redirect на страницу авторизации через Сервис
+      parameters:
+        - $ref: "#/components/parameters/Service"
+      tags:
+        - connect
+      security:
+        - AccessToken: []
+      responses:
+        307:
+          description: Redirect на страницу авторизации через Сервис
+        400:
+          description: Неверный сервис
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                message: Invalid service
+                status: 400
+        403:
+          $ref: "#/components/responses/403"
+        500:
+          $ref: "#/components/responses/500"
+  /connect/twitch:
+    get:
+      operationId: twitchConnectCallback
+      summary: Twitch Callback подключения
+      description: Callback OAuth авторизации Twitch'а, использующийся для привязки аккаунта Twitch к текущему пользователю
+      parameters:
+        - name: code
+          in: query
+          description: Код для авторизации пользователя
+          schema:
+            type: string
+        - name: scope
+          in: query
+          description: Права выданные на данный код
+          schema:
+            type: string
+        - name: error
+          in: query
+          description: Ошибка при авторизации
+          schema:
+            type: string
+        - name: description
+          in: query
+          description: Описание ошибки при авторизации
+          schema:
+            type: string
+      tags:
+        - connect
+      security:
+        - AccessToken: []
+      responses:
+        308:
+          description: Redirect на главную страницу
+        400:
+          description: Неверный код
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                message: Invalid code
+                status: 400
+        401:
+          description: Ошибка на стадии авторизации
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                message: Authorization stage error
+                status: 401
+        403:
+          $ref: "#/components/responses/403"
+        500:
+          $ref: "#/components/responses/500"
+    delete:
+      operationId: twitchDelete
+      summary: Удаление Twitch
+      description: Используется для удаления привязанного аккаунта Twitch
+      tags:
+        - connect
+      security:
+        - AccessToken: []
+      responses:
+        204:
+          description: Успешно удален
+        403:
+          $ref: "#/components/responses/403"
+        500:
+          $ref: "#/components/responses/500"
+  /connect/discord:
+    get:
+      operationId: discordConnectCallback
+      summary: Discord Callback подключения
+      description: Callback OAuth авторизации Discord'а, использующийся для привязки аккаунта Discord к текущему пользователю
+      parameters:
+        - name: code
+          in: query
+          description: Код для авторизации пользователя
+          schema:
+            type: string
+        - name: error
+          in: query
+          description: Ошибка при авторизации
+          schema:
+            type: string
+        - name: error_description
+          in: query
+          description: Описание ошибки при авторизации
+          schema:
+            type: string
+      tags:
+        - connect
+      security:
+        - AccessToken: []
+      responses:
+        308:
+          description: Redirect на главную страницу
+        400:
+          description: Неверный код
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                message: Invalid code
+                status: 400
+        401:
+          description: Ошибка на стадии авторизации
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                message: Authorization stage error
+                status: 401
+        403:
+          $ref: "#/components/responses/403"
+        500:
+          $ref: "#/components/responses/500"
+    delete:
+      operationId: discordDelete
+      summary: Удаление Discord
+      description: Используется для удаления привязанного аккаунта Discord
+      tags:
+        - connect
+      security:
+        - AccessToken: []
+      responses:
+        204:
+          description: Успешно удален
+        403:
+          $ref: "#/components/responses/403"
+        500:
+          $ref: "#/components/responses/500"
+  /ban:
+    get:
+      operationId: isBanned
+      summary: Проверка бана
+      description: Проверяет выдан ли бан. Используя AccessToken будет информация текущего пользователя
+      parameters:
+        - name: nickname
+          in: query
+          schema:
+            type: string
+            description: Ник Minecraft
+        - name: uuid
+          in: query
+          schema:
+            type: string
+            description: UUID Minecraft
+        - name: discord
+          in: query
+          schema:
+            type: string
+            description: |
+              Discord тег. Например: `BruhaBruh#0000`
+        - name: twitch
+          in: query
+          schema:
+            type: string
+            description: Twitch никнейм. Регистр не важен
+      tags:
+        - ban
+      security:
+        - ServerToken: []
+        - AccessToken: []
+      responses:
+        200:
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BannedUser"
+              example:
+                id: 2cd21400-ffd1-4057-9bb7-ae81375220f6
+                username: BruhaBruh
+                twitch: BruhaBruh
+                discord: BruhaBruh#0000
+                isBanned: false
+                reason: Хубабуба
+                expiredAt: 2022-05-18T11:09:01.080Z
+        400:
+          description: Не указана цель. Только для ServerToken
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                message: Bad Request
+                status: 400
+        403:
+          $ref: "#/components/responses/403"
+        404:
+          description: Игрок не найден. Только для ServerToken
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                message: Not Found
+                status: 404
+        500:
+          $ref: "#/components/responses/500"
+    post:
+      operationId: banUser
+      summary: Выдача бана
+      description: Выдает бан по нику, uuid, тегу Discord или нику Twitch, так же может быть использован для уменьшения срока бана вплоть до разбана, нужно просто указать прошедшую временную метку
+      parameters:
+        - name: username
+          in: query
+          schema:
+            type: string
+            description: Ник Minecraft
+        - name: uuid
+          in: query
+          schema:
+            type: string
+            description: UUID Minecraft
+        - name: discord
+          in: query
+          schema:
+            type: string
+            description: |
+              Discord тег. Например: `BruhaBruh#0000`
+        - name: twitch
+          in: query
+          schema:
+            type: string
+            description: Twitch никнейм. Регистр не важен
+        - name: reason
+          in: query
+          schema:
+            type: string
+            description: |
+              Причина блокировки. **Макс. 64 символа**
+        - name: expired
+          in: query
+          schema:
+            type: string
+            description: |
+              Дата окончания бата в [ISO 8601](https://ru.wikipedia.org/wiki/ISO_8601). Например: `2022-05-18T11:09:01.080Z`
+      tags:
+        - ban
+      security:
+        - ServerToken: []
+      responses:
+        200:
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BannedUser"
+              example:
+                id: 2cd21400-ffd1-4057-9bb7-ae81375220f6
+                username: BruhaBruh
+                twitch: BruhaBruh
+                discord: BruhaBruh#0000
+                isBanned: false
+                reason: Хубабуба
+                expiredAt: 2022-05-18T11:09:01.080Z
+        400:
+          description: Не указана цель
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                message: Bad Request
+                status: 400
+        403:
+          $ref: "#/components/responses/403"
+        404:
+          description: Игрок не найден
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                message: Not Found
+                status: 404
+        500:
+          $ref: "#/components/responses/500"
+  /whitelist:
+    get:
+      operationId: isWhitelisted
+      summary: Проверка Whitelist
+      description: Проверяет есть ли пользователь в белом списке. Используя AccessToken будет информация текущего пользователя
+      parameters:
+        - name: nickname
+          in: query
+          schema:
+            type: string
+            description: Ник Minecraft
+        - name: uuid
+          in: query
+          schema:
+            type: string
+            description: UUID Minecraft
+        - name: discord
+          in: query
+          schema:
+            type: string
+            description: |
+              Discord тег. Например: `BruhaBruh#0000`
+        - name: twitch
+          in: query
+          schema:
+            type: string
+            description: Twitch никнейм. Регистр не важен
+      tags:
+        - whitelist
+      security:
+        - ServerToken: []
+        - AccessToken: []
+      responses:
+        200:
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  isWhitelisted:
+                    type: boolean
+                    description: Есть в белом списке?
+              example:
+                isWhitelisted: true
+        400:
+          description: Не указана цель. Только для ServerToken
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                message: Bad Request
+                status: 400
+        403:
+          $ref: "#/components/responses/403"
+        404:
+          description: Игрок не найден. Только для ServerToken
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                message: Not Found
+                status: 404
+        500:
+          $ref: "#/components/responses/500"
+    post:
+      operationId: whitelistUser
+      summary: Внесение/Удаление в белый список
+      description: Вносит в белый список или удаляет по нику, uuid, тегу Discord или нику Twitch
+      parameters:
+        - name: isWhitelisted
+          in: query
+          schema:
+            type: boolean
+            description: В белый список?
+        - name: username
+          in: query
+          schema:
+            type: string
+            description: Ник Minecraft
+        - name: uuid
+          in: query
+          schema:
+            type: string
+            description: UUID Minecraft
+        - name: discord
+          in: query
+          schema:
+            type: string
+            description: |
+              Discord тег. Например: `BruhaBruh#0000`
+        - name: twitch
+          in: query
+          schema:
+            type: string
+            description: Twitch никнейм. Регистр не важен
+      tags:
+        - whitelist
+      security:
+        - ServerToken: []
+      responses:
+        204:
+          description: Успешно
+        400:
+          description: Не указана цель
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                message: Bad Request
+                status: 400
+        403:
+          $ref: "#/components/responses/403"
+        404:
+          description: Игрок не найден
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                message: Not Found
+                status: 404
+        500:
+          $ref: "#/components/responses/500"
