@@ -399,7 +399,7 @@ paths:
         - AccessToken: []
       responses:
         308:
-          description: Redirect на главную страницу
+          description: Redirect на /complete/twitch
         400:
           description: Неверный код
           content:
@@ -464,7 +464,7 @@ paths:
         - AccessToken: []
       responses:
         308:
-          description: Redirect на главную страницу
+          description: Redirect на /complete/discord
         400:
           description: Неверный код
           content:
