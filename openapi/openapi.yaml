@@ -539,7 +539,7 @@ paths:
       summary: Проверка бана
       description: Проверяет выдан ли бан. Используя AccessToken будет информация текущего пользователя
       parameters:
-        - name: nickname
+        - name: username
           in: query
           schema:
             type: string
@@ -686,7 +686,7 @@ paths:
       summary: Проверка Whitelist
       description: Проверяет есть ли пользователь в белом списке. Используя AccessToken будет информация текущего пользователя
       parameters:
-        - name: nickname
+        - name: username
           in: query
           schema:
             type: string
