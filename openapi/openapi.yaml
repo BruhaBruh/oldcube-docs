@@ -730,8 +730,12 @@ paths:
                   isWhitelisted:
                     type: boolean
                     description: Есть в белом списке?
+                  whitelistExpiredAt:
+                    type: string
+                    description: Дата окончания нахождения в белом списке
               example:
-                isWhitelisted: true
+                isWhitelisted: false
+                whitelistExpiredAt: 2022-05-18T11:09:01.080Z
         400:
           description: Не указана цель. Только для ServerToken
           content:
@@ -764,9 +768,9 @@ paths:
             schema:
               type: object
               properties:
-                isWhitelisted:
-                  type: boolean
-                  description: В белый список?
+                whitelistExpiredAt:
+                  type: string
+                  description: Дата окончания нахождения в белом списке
                 username:
                   type: string
                   description: Ник Minecraft
@@ -790,8 +794,22 @@ paths:
       security:
         - ServerToken: []
       responses:
-        204:
+        200:
           description: Успешно
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  isWhitelisted:
+                    type: boolean
+                    description: Есть в белом списке?
+                  whitelistExpiredAt:
+                    type: string
+                    description: Дата окончания нахождения в белом списке
+              example:
+                isWhitelisted: false
+                whitelistExpiredAt: 2022-05-18T11:09:01.080Z
         400:
           description: Не указана цель
           content:
