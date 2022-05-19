@@ -633,13 +633,14 @@ paths:
                   description: Twitch никнейм. Регистр не важен
                 banReason:
                   type: string
-                  description: Причина блокировки. **Макс. 64 символа**
+                  description: Причина блокировки
+                  maxLength: 64
                 banExpiredAt:
                   type: string
                   description: |
                     Дата окончания бата в [ISO 8601](https://ru.wikipedia.org/wiki/ISO_8601). Например: `2022-05-18T11:09:01.080Z`
               required:
-                - reason
+                - banReason
                 - banExpiredAt
             example:
               id: 2cd21400-ffd1-4057-9bb7-ae81375220f6
