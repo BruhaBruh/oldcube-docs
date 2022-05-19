@@ -75,13 +75,19 @@ components:
           type: string
           description: UUID Minecraft
         username:
-          type: string
+          type:
+            - string
+            - null
           description: Ник Minecraft
         twitch:
-          type: string
+          type:
+            - string
+            - null
           description: Twitch никнейм
         discord:
-          type: string
+          type:
+            - string
+            - null
           description: Тег Discord
         isBanned:
           type: boolean
