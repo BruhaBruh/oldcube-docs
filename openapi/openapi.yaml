@@ -179,8 +179,8 @@ paths:
       security:
         - {}
       responses:
-        308:
-          description: Redirect на главную страницу и установка токенов доступа и обновления
+        204:
+          description: Успешно
         400:
           $ref: "#/components/responses/InvalidLoginOrPassword"
         500:
